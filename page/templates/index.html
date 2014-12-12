@@ -1,0 +1,11 @@
+$def with (posts, pages)
+<ul>
+    $for post in posts:
+        <!--
+        <li id= "$post.id"><a href="$post.href">$post.title</a></li>
+        -->
+        <li id= "$post.id"><a href="$post.href"><img src="$post.img" alt="$post.title"/></a></li>
+</ul>
+
+    $for page in range(1, pages+1):
+        <a href="/page/$page">$page</a>
