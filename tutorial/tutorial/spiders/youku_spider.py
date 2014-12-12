@@ -8,11 +8,13 @@
 import logging
 import scrapy
 import items
-from tool import redis_manager
+
+add = lambda x : x + 1
 
 log = logging.getLogger()
 
 class YoukuSpider(scrapy.Spider):
+    id = 0
     name = "youku"
     allowed_domains = ["youku.com"]
     start_urls = [
@@ -20,12 +22,7 @@ class YoukuSpider(scrapy.Spider):
     ]
     
     def __init__(self):
-        try:
-            self.redis = redis_manager.RedisManager(rhost = '10.81.14.171',
-                                            rport = 8888)
-        except redis_manager.Error as e:
-            log.critical('e:%s, connect to redis fail' %(e))
-            exit()
+        pass
 
     def parse(self, response):
         for sel in response.xpath(
@@ -37,17 +34,11 @@ class YoukuSpider(scrapy.Spider):
             item['title'] = sel.xpath('div[@class="v-link"]'
                                       '/a'
                                       '/@title[1]').extract()
-            if not item['title']:
-                log.warning('sel:%s, no title' %(sel))
-                continue
 
             # get href, filter invalid item
             item['href'] = sel.xpath('div[@class="v-link"]'
                                      '/a'
                                      '/@href[1]').extract()
-            if not item['href']:
-                log.warning('sel:%s, no href' %(sel))
-                continue
 
             # get image_urls, filter invalid item
             item['image_urls'] = sel.xpath('div[@class="v-thumb"]'
@@ -58,15 +49,9 @@ class YoukuSpider(scrapy.Spider):
                 item['image_urls'] = sel.xpath('div[@class="v-thumb"]'
                                                '/img'
                                                '/@src[1]').extract()
-            if not item['image_urls']:
-                log.warning('sel:%s, no image_urls' %(sel))
-                continue
 
-            # filter repeated item
-            if self.redis.hexists('hrefs', item['href'][0]):
-                log.info('href:%s, repeated item' %(item['href'][0]))
-            else:
-                self.redis.hset('hrefs', item['href'][0], 1)
-                log.info('title:%s, href:%s, image_urls:%s'\
-                         %(item['title'], item['href'], item['image_urls']))
-                yield item
+            YoukuSpider.id = add(YoukuSpider.id)
+            item['id'] = YoukuSpider.id
+            log.info('iid:%d,\nsel:%s,\nitem:%s'\
+                     %(YoukuSpider.id, sel, item))
+            yield item

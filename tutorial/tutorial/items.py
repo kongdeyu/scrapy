@@ -8,6 +8,7 @@
 import scrapy
 
 class YoukuItem(scrapy.Item):
+    id = scrapy.Field()
     title = scrapy.Field()
     href = scrapy.Field()
     image_urls = scrapy.Field()

@@ -32,7 +32,7 @@ class Logger:
         formatter =\
             logging.Formatter('[%(asctime)s] '
                               '[%(levelname)s] '
-                              '[%(threadName)s] '
+                              '[%(thread)d] '
                               '[%(module)s:%(lineno)d] '
                               '%(message)s')
         handler.setFormatter(formatter)

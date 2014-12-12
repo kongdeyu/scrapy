@@ -11,12 +11,22 @@ import json
 import codecs
 import items
 import scrapy
+from tool import redis_manager
 from tool import db_manager
 
 log = logging.getLogger()
 
 class TutorialPipeline(object):
     def __init__(self):
+        # init redis
+        try:
+            self.redis = redis_manager.RedisManager(rhost = '10.81.14.171',
+                                            rport = 8888)
+        except redis_manager.Error as e:
+            log.critical('e:%s, connect to redis fail' %(e))
+            exit()
+
+        # init db
         try:
             self.db = db_manager.DBManager(dbhost = '127.0.0.1',
                                             dbport = 3306,
@@ -31,26 +41,37 @@ class TutorialPipeline(object):
     def process_item(self, item, spider):
         # filter invalid item
         if not item['title']:
-            log.warning('item:%s, no title' %(title))
-            raise items.YoukuItem('no title')
+            log.warning('iid:%d, no title' %(item['id']))
+            raise scrapy.exceptions.DropItem('no title')
         if not item['href']:
-            log.warning('item:%s, no href' %(title))
-            raise items.YoukuItem('no href')
+            log.warning('iid:%d, no href' %(item['id']))
+            raise scrapy.exceptions.DropItem('no href')
         if not item['images']:
-            log.warning('item:%s, no images' %(title))
-            raise items.YoukuItem('no images')
+            log.warning('iid:%d, no images' %(item['id']))
+            raise scrapy.exceptions.DropItem('no images')
+
+        title = item['title'][0].encode('utf-8')
+        href = item['href'][0].encode('utf-8')
+        images = item['images'][0]['url'].encode('utf-8')
+
+        # filter repeated item
+        if self.redis.hexists('hrefs', href):
+            log.info('iid:%d, repeated item' %(item['id']))
+            raise scrapy.exceptions.DropItem('repeated item')
+        
+        # insert hrefs to redis
+        self.redis.hset('hrefs', href, 1)
 
         # valid item, insert to db
         try:
             sql = 'insert into tbl(title, href, img) values("%s", "%s", "%s");'\
-                        %(db_manager.DBManager.escape_string(
-                            item['title'][0].encode('utf-8')),
-                          db_manager.DBManager.escape_string(
-                              item['href'][0].encode('utf-8')),
-                          db_manager.DBManager.escape_string(
-                              item['images'][0]['url'].encode('utf-8')))
+                        %(db_manager.DBManager.escape_string(title),
+                          db_manager.DBManager.escape_string(href),
+                          db_manager.DBManager.escape_string(images))
             self.db.insert(sql)
-            log.info('sql:%s, insert to db success' %(sql))
+            log.info('iid:%d, sql:%s, insert to db success'\
+                     %(item['id'], sql))
         except db_manager.Error as e:
-            log.warning('sql:%s, e:%s, insert to db fail' %(sql, e))
+            log.warning('iid:%d, sql:%s, e:%s, insert to db fail'\
+                        %(item['id'], sql, e))
         return item
