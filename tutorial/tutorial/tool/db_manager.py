@@ -1,23 +1,26 @@
-#!/usr/bin/python
 #coding:utf-8
 
 import MySQLdb
 
-class DBManager:
-    def __init__(self,
-                 dbhost,
-                 dbport,
-                 dbusername,
-                 dbpasswd,
-                 dbname,
-                 dbcharset):
+
+class DBManager(object):
+
+    def __init__(
+        self,
+        host,
+        port,
+        user,
+        passwd,
+        db,
+        charset):
         try:
-            self.conn = MySQLdb.connect(host = dbhost,
-                                        port = dbport,
-                                        user = dbusername,
-                                        passwd = dbpasswd,
-                                        db = dbname,
-                                        charset = dbcharset)
+            self.conn = MySQLdb.connect(
+                host=host,
+                port=port,
+                user=user,
+                passwd=passwd,
+                db=db,
+                charset=charset)
         except Exception as e:
             self.conn.close()
             raise Error(e)
@@ -41,11 +44,11 @@ class DBManager:
     def rollback(self):
         self.conn.rollback()
 
-    def execute(self, sql, is_commit = True):
+    def execute(self, sql, is_commit=True):
         try:
             cursor = self.conn.cursor()
             cursor.execute(sql)
-            if (is_commit == True):
+            if is_commit:
                 self.commit()
         except Exception as e:
             self.rollback()
@@ -53,10 +56,10 @@ class DBManager:
         finally:
             cursor.close()
 
-    def insert(self, sql, is_commit = True):
+    def insert(self, sql, is_commit=True):
         self.execute(sql, is_commit)
 
-    def delete(self, sql, is_commit = True):
+    def delete(self, sql, is_commit=True):
         self.execute(sql, is_commit)
 
     def fetch_list(self, sql):
@@ -72,13 +75,14 @@ class DBManager:
     def fetch_dict(self, sql):
         try:
             cursor = self.conn.cursor(
-                cursorclass = MySQLdb.cursors.DictCursor)
+                cursorclass=MySQLdb.cursors.DictCursor)
             cursor.execute(sql)
             return cursor.fetchall()
         except Exception as e:
             raise Error(e)
         finally:
             cursor.close()
+
 
 class Error(Exception):
     pass

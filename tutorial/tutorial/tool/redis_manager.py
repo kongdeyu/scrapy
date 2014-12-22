@@ -3,26 +3,29 @@
 
 import redis
 
-class RedisManager:
-    def __init__(self,
-                 rhost,
-                 rport,
-                 rdb = 0,
-                 rpassword = None,
-                 rsocket_timeout = None,
-                 rcharset = 'utf-8',
-                 rerrors = 'strict',
-                 runix_socket_path = None):
+
+class RedisManager(object):
+
+    def __init__(
+        self,
+        host,
+        port,
+        db=0,
+        password=None,
+        socket_timeout=None,
+        encoding='utf-8',
+        encoding_errors='strict'):
         try:
-            self.conn_pool = redis.ConnectionPool(host = rhost,
-                                        port = rport,
-                                        db = rdb,
-                                        password = rpassword,
-                                        socket_timeout = rsocket_timeout,
-                                        encoding = rcharset,
-                                        encoding_errors = rerrors)
+            self.conn_pool = redis.ConnectionPool(
+                host=host,
+                port=port,
+                db=db,
+                password=password,
+                socket_timeout=socket_timeout,
+                encoding=encoding,
+                encoding_errors=encoding_errors)
             self.conn = redis.StrictRedis(
-                                        connection_pool = self.conn_pool)
+                connection_pool=self.conn_pool)
         except Exception as e:
             self.conn_pool.disconnect()
             raise Error(e)
@@ -47,6 +50,7 @@ class RedisManager:
             return self.conn.hexists(name, key)
         except Exception as e:
             raise Error(e)
+
 
 class Error(Exception):
     pass

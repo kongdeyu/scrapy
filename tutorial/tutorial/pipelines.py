@@ -5,35 +5,40 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
-import os
-import logging
-import json
 import codecs
-import items
+import json
+import logging
+import os
 import scrapy
-from tool import redis_manager
+import items
 from tool import db_manager
+from tool import redis_manager
+
 
 log = logging.getLogger()
 
+
 class TutorialPipeline(object):
+
     def __init__(self):
         # init redis
         try:
-            self.redis = redis_manager.RedisManager(rhost = '10.81.14.171',
-                                            rport = 8888)
+            self.redis = redis_manager.RedisManager(
+                host='10.81.14.171',
+                port=8888)
         except redis_manager.Error as e:
             log.critical('e:%s, connect to redis fail' %(e))
             exit()
 
         # init db
         try:
-            self.db = db_manager.DBManager(dbhost = '127.0.0.1',
-                                            dbport = 3306,
-                                            dbusername = 'root',
-                                            dbpasswd = 'kongdeyu',
-                                            dbname = 'test',
-                                            dbcharset = 'utf8')
+            self.db = db_manager.DBManager(
+                host='127.0.0.1',
+                port=3306,
+                user='root',
+                passwd='kongdeyu',
+                db='test',
+                charset='utf8')
         except db_manager.Error as e:
             log.critical('e:%s, connect to db fail' %(e))
             exit()
@@ -64,14 +69,14 @@ class TutorialPipeline(object):
 
         # valid item, insert to db
         try:
-            sql = 'insert into tbl(title, href, img) values("%s", "%s", "%s");'\
-                        %(db_manager.DBManager.escape_string(title),
-                          db_manager.DBManager.escape_string(href),
-                          db_manager.DBManager.escape_string(images))
+            sql = ('insert into tbl(title, href, img) values("%s", "%s", "%s");'
+                      %(db_manager.DBManager.escape_string(title),
+                      db_manager.DBManager.escape_string(href),
+                      db_manager.DBManager.escape_string(images)))
             self.db.insert(sql)
-            log.info('iid:%d, sql:%s, insert to db success'\
-                     %(item['id'], sql))
+            log.info('iid:%d, sql:%s, insert to db success'
+                         %(item['id'], sql))
         except db_manager.Error as e:
-            log.warning('iid:%d, sql:%s, e:%s, insert to db fail'\
-                        %(item['id'], sql, e))
+            log.warning('iid:%d, sql:%s, e:%s, insert to db fail'
+                                %(item['id'], sql, e))
         return item
